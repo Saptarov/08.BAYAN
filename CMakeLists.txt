@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
 set(PATCH_VERSION "1" CACHE INTERNAL "Patch version")
 set(PROJECT_VESRION 0.0.${PATCH_VERSION})
@@ -15,7 +15,7 @@ file(GLOB_RECURSE TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test/*)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Source" FILES ${MAIN_SRC} ${TEST_SRC})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 add_executable(
     ${PROJECT_NAME}
     ${MAIN_SRC}
@@ -24,7 +24,10 @@ add_executable(
 target_link_libraries(
     ${PROJECT_NAME}
     ${Boost_FILESYSTEM_LIBRARY}
-      ${Boost_SYSTEM_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+    ${Boost_REGEX_LIBRARY}
+    ${Boost_OPTION_LIBRARY}
+    ${Boost_LIBRARIES}
 
     )
 
