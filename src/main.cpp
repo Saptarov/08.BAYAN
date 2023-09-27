@@ -22,7 +22,7 @@ std::string hashBlock(const std::string& block) {
     return std::string(reinterpret_cast<const char*>(&digest), sizeof(typename Hash::digest_type));
 }
 
-bool isDuplicate(const std::string& path, const std::vector<std::string>& hashes) {
+bool isDuplicate(const std::string& path, std::string& blockHash, const std::vector<std::string>& hashes) {
     std::ifstream file(path, std::ios::binary);
     if (!file) {
         return false;
@@ -32,7 +32,7 @@ bool isDuplicate(const std::string& path, const std::vector<std::string>& hashes
     std::vector<char> buffer(blockSize);
     while (file.read(buffer.data(), blockSize)) {
         std::string block(buffer.begin(), buffer.begin() + file.gcount());
-        std::string blockHash = hashBlock<boost::uuids::detail::sha1>(block);
+        blockHash = hashBlock<boost::uuids::detail::sha1>(block);
         if (std::find(hashes.begin(), hashes.end(), blockHash) == hashes.end()) {
             return false;
         }
@@ -47,7 +47,8 @@ void scanDirectory(size_t blockSize
                    , std::vector<std::string>& directories
                    , std::set<std::string>& excludeDirs
                    , const std::vector<std::string>& allowedExtensions
-                   , std::vector<std::string>& hashes, std::vector<std::vector<std::string>>& duplicates
+                   , std::vector<std::string>& hashes
+                   , std::vector<std::vector<std::string>>& duplicates
                    )
 {
     std::vector<std::string> subdirs;
@@ -61,13 +62,13 @@ void scanDirectory(size_t blockSize
                 std::string fileExtension = boost::algorithm::to_lower_copy(dir.path().extension().string());
                 auto dir_path = dir.path().string();
                 if (std::find(allowedExtensions.begin(), allowedExtensions.end(), fileExtension) != allowedExtensions.end() && file_size(dir_path) <= fileSize) {
-                    std::string blockHash = hashBlock<boost::uuids::detail::sha1>(dir.path().string());
-                    if (blockHash.size() > blockSize) {
-                        continue;
-                    }
-                    if (std::find(hashes.begin(), hashes.end(), blockHash) != hashes.end()) {
+                    std::string blockHash;
+                    if (isDuplicate(dir.path().string(), blockHash, hashes)) {
                         hashes.push_back(blockHash);
                         duplicates.back().push_back(dir.path().string());
+                        for (auto& path : duplicates.back()) {
+                            std::cout << path << std::endl;
+                        }
                     } else {
                         hashes.push_back(blockHash);
                         duplicates.push_back({ dir.path().string() });
